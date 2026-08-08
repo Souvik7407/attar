@@ -2960,9 +2960,9 @@ function App() {
           <span 
             onClick={handleFooterSecretClick} 
             style={{ cursor: 'default', userSelect: 'none' }}
-            title="Designed with Indian Cultural Heritage."
+            title="Designed with Souvik Deb(https://www.buskan.online/)."
           >
-            Designed with Indian Cultural Heritage.
+            Designed with Souvik Deb(https://www.buskan.online/).
           </span>
         </div>
       </footer>
