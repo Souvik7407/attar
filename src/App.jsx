@@ -87,29 +87,40 @@ function App() {
     ];
   });
 
-  // --- Local Storage Syncing ---
+  // --- Safe Local Storage Syncing ---
+  const safeSetLocalStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.error(`localStorage setItem error for key "${key}":`, error);
+      if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED' || error.code === 22) {
+        alert("Action Canceled: The uploaded image is too large! Local browser storage has a 5MB limit. Please compress the image file (keep it under 800KB) or paste an online image URL instead.");
+      }
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('attar_products', JSON.stringify(products));
+    safeSetLocalStorage('attar_products', JSON.stringify(products));
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('attar_cart', JSON.stringify(cart));
+    safeSetLocalStorage('attar_cart', JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
-    localStorage.setItem('attar_orders', JSON.stringify(orders));
+    safeSetLocalStorage('attar_orders', JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('attar_reviews', JSON.stringify(reviews));
+    safeSetLocalStorage('attar_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
   useEffect(() => {
-    localStorage.setItem('attar_coupons', JSON.stringify(coupons));
+    safeSetLocalStorage('attar_coupons', JSON.stringify(coupons));
   }, [coupons]);
 
   useEffect(() => {
-    localStorage.setItem('attar_gallery_images', JSON.stringify(galleryImages));
+    safeSetLocalStorage('attar_gallery_images', JSON.stringify(galleryImages));
   }, [galleryImages]);
 
   // Hidden trigger: URL parameter or hash check to enter seller portal
@@ -228,7 +239,7 @@ function App() {
   const [changePasskeySuccess, setChangePasskeySuccess] = useState('');
 
   useEffect(() => {
-    localStorage.setItem('attar_admin_passkey', adminPasskey);
+    safeSetLocalStorage('attar_admin_passkey', adminPasskey);
   }, [adminPasskey]);
 
   // Seller Portal CRUD states
@@ -365,8 +376,12 @@ function App() {
   };
 
   const cartSubtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  }, [cart]);
+    return cart.reduce((sum, item) => {
+      const match = products.find(p => p.id === item.id);
+      const currentPrice = match ? (match.price[item.size] || item.price) : item.price;
+      return sum + (currentPrice * item.quantity);
+    }, 0);
+  }, [cart, products]);
 
   // --- Cart Coupon Logic ---
   const discountAmount = useMemo(() => {
@@ -2983,23 +2998,29 @@ function App() {
               <button className="btn-gold-outline" style={{ marginTop: '16px' }} onClick={() => { setIsCartOpen(false); setCustomerTab('shop'); }}>Go Shopping</button>
             </div>
           ) : (
-            cart.map(item => (
-              <div key={item.cartItemId} className="cart-item">
-                <div className="cart-item-info">
-                  <div className="cart-item-name">{item.name}</div>
-                  <div className="cart-item-meta">Size: {item.size} | Category: {item.category}</div>
-                  <div className="cart-item-qty-row">
-                    <button className="qty-btn" onClick={() => updateCartQty(item.cartItemId, -1)}><Minus size={12} /></button>
-                    <span>{item.quantity}</span>
-                    <button className="qty-btn" onClick={() => updateCartQty(item.cartItemId, 1)}><Plus size={12} /></button>
+            cart.map(item => {
+              const match = products.find(p => p.id === item.id);
+              const currentName = match ? match.name : item.name;
+              const currentPrice = match ? (match.price[item.size] || item.price) : item.price;
+              
+              return (
+                <div key={item.cartItemId} className="cart-item">
+                  <div className="cart-item-info">
+                    <div className="cart-item-name">{currentName}</div>
+                    <div className="cart-item-meta">Size: {item.size} | Category: {item.category}</div>
+                    <div className="cart-item-qty-row">
+                      <button className="qty-btn" onClick={() => updateCartQty(item.cartItemId, -1)}><Minus size={12} /></button>
+                      <span>{item.quantity}</span>
+                      <button className="qty-btn" onClick={() => updateCartQty(item.cartItemId, 1)}><Plus size={12} /></button>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="cart-item-price">₹{currentPrice * item.quantity}</div>
+                    <button className="cart-remove-btn" onClick={() => removeCartItem(item.cartItemId)}><Trash2 size={14} /></button>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="cart-item-price">₹{item.price * item.quantity}</div>
-                  <button className="cart-remove-btn" onClick={() => removeCartItem(item.cartItemId)}><Trash2 size={14} /></button>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
