@@ -57,7 +57,8 @@ export const INITIAL_ATTARS = [
     rating: 4.9,
     reviewsCount: 56,
     isPremium: false,
-    price: { "3ml": 99, "6ml": 189, "12ml": 349 }
+    price: { "3ml": 99, "6ml": 189, "12ml": 349 },
+    image: "/vokul.jpg"
   },
   {
     id: 5,
